@@ -19,6 +19,29 @@ export default function Home() {
   const [videoSrc, setVideoSrc] = useState('http://localhost:5001/video_feed');
   const [freeSpots, setFreeSpots] = useState(0);
   const [reservedSpots, setReservedSpots] = useState(0);
+  const [showStatistics, setShowStatistics] = useState(false); // حالة جديدة لإظهار أو إخفاء قسم الإحصائيات
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/stats');
+      const { free_spots, reserved_spots } = response.data;
+      setFreeSpots(free_spots);
+      setReservedSpots(reserved_spots);
+
+      // تحديث البيانات في الرسوم البيانية
+      if (barChartInstance.current) {
+        barChartInstance.current.data.datasets[0].data = [free_spots, reserved_spots];
+        barChartInstance.current.update();
+      }
+
+      if (doughnutChartInstance.current) {
+        doughnutChartInstance.current.data.datasets[0].data = [free_spots, reserved_spots];
+        doughnutChartInstance.current.update();
+      }
+    } catch (error) {
+      console.error("There was an error fetching the stats!", error);
+    }
+  };
 
   useEffect(() => {
     if (barChartRef.current) {
@@ -93,27 +116,7 @@ export default function Home() {
       });
     }
 
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await axios.get('http://localhost:5001/stats');
-        const { free_spots, reserved_spots } = response.data;
-        setFreeSpots(free_spots);
-        setReservedSpots(reserved_spots);
-
-        // تحديث البيانات في الرسوم البيانية
-        if (barChartInstance.current) {
-          barChartInstance.current.data.datasets[0].data = [free_spots, reserved_spots];
-          barChartInstance.current.update();
-        }
-
-        if (doughnutChartInstance.current) {
-          doughnutChartInstance.current.data.datasets[0].data = [free_spots, reserved_spots];
-          doughnutChartInstance.current.update();
-        }
-      } catch (error) {
-        console.error("There was an error fetching the stats!", error);
-      }
-    }, 5000); // تحديث البيانات كل 5 ثواني
+    const intervalId = setInterval(fetchStats, 5000); // تحديث البيانات كل 5 ثواني
 
     return () => clearInterval(intervalId); // تنظيف المؤقت عند إزالة التثبيت
 
@@ -121,6 +124,11 @@ export default function Home() {
 
   const handleViewFreeSpots = async () => {
     // لا حاجة لإجراء طلب هنا لأن الفيديو يتم جلبه بشكل مباشر من خلال المسار
+  };
+
+  const handleShowStatistics = async () => {
+    await fetchStats(); // جلب البيانات قبل عرض الإحصائيات
+    setShowStatistics(true);
   };
 
   return (
@@ -162,7 +170,7 @@ export default function Home() {
               </video>
             </div>
             <div className="modal-footer">
-              <button type="button" className="btn btn-primary ms-4">Show Statistics</button>
+              <button type="button" className="btn btn-primary ms-4" onClick={handleShowStatistics}>Show Statistics</button>
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
           </div>
@@ -170,21 +178,23 @@ export default function Home() {
       </div>
 
       {/* الاحصائيات chart */}
-      <div className=' final curved-shape d-flex justify-content-center align-items-center '>
-        <section className='statistics '>
-          <div className='container'>
-            <div className='content'>
-              <div className='text'>
-                <p className='chartHeading'>These are the parking statistics at this time:</p>
-                <p className='chartText'>On our website, we allow you to know the statistics about parking to make it easier for you and to ensure that you do not waste your time</p>
-              </div>
-              <div className='chart'>
-                <canvas ref={doughnutChartRef}></canvas>
+      {showStatistics && (
+        <div className=' final curved-shape d-flex justify-content-center align-items-center '>
+          <section className='statistics '>
+            <div className='container'>
+              <div className='content'>
+                <div className='text'>
+                  <p className='chartHeading'>These are the parking statistics at this time:</p>
+                  <p className='chartText'>On our website, we allow you to know the statistics about parking to make it easier for you and to ensure that you do not waste your time</p>
+                </div>
+                <div className='chart'>
+                  <canvas ref={doughnutChartRef}></canvas>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-      </div>
+          </section>
+        </div>
+      )}
 
       {/* محتويات السيرفسيز */}
       <div className="about-boxes">
@@ -197,7 +207,7 @@ export default function Home() {
                   <i className="fa-solid fa-calendar"></i>
                 </div>
                 <h5 className="card-title">Our Mission</h5>
-                <span className="card-text">Lorem ipsum dolor sit amet, consectetur elit, sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
+                <span className="card-text">Lorem ipsum dolor sit amet، consectetur elit، sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam، quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
               </div>
             </div>
             <div className="col-md-4 my-4 col-lg-4 d-flex align-items-stretch">
@@ -207,7 +217,7 @@ export default function Home() {
                   <i className="fa-solid fa-calendar"></i>
                 </div>
                 <h5 className="card-title">Our Plan</h5>
-                <span className="card-text">Lorem ipsum dolor sit amet, consectetur elit، sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam، quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
+                <span className="card-text">Lorem ipsum dolor sit amet، consectetur elit، sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam، quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
               </div>
             </div>
             <div className="col-md-4 my-4 col-lg-4 d-flex align-items-stretch">
@@ -217,7 +227,7 @@ export default function Home() {
                   <i className="fa-solid fa-film"></i>
                 </div>
                 <h5 className="card-title">Our Vision</h5>
-                <span className="card-text ms-0">Lorem ipsum dolor sit amet, consectetur elit، sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam، quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
+                <span className="card-text ms-0">Lorem ipsum dolor sit amet، consectetur elit، sed do eiusmod tempor ut labore et dolore magna aliqua. Ut enim ad minim veniam، quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</span>
               </div>
             </div>
           </div>
